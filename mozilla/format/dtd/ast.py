@@ -2,7 +2,7 @@ import pyast
 
 class Node(pyast.Node):
     _abstract = True
-    _debug = True
+    _debug = False
 
 class Entry(Node):
     _abstract = True
