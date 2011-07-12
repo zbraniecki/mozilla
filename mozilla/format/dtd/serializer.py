@@ -7,7 +7,10 @@ class SerializerError(Exception):
 class Serializer():
     @classmethod
     def serialize(cls, dtd):
-        string = ''.join([i for i in chain(*zip_longest(dtd._struct, map(cls.dump_entry, dtd.body))) if i])
+        if hasattr(dtd, '_struct'):
+            string = ''.join([i for i in chain(*zip_longest(dtd._struct, map(cls.dump_entry, dtd.body))) if i])
+        else:
+            string = '\n'.join([i for i in map(cls.dump_entry, dtd.body)])
         return string
 
     @classmethod
@@ -21,6 +24,8 @@ class Serializer():
 
     @classmethod
     def dump_entity(cls, entity):
+        if not hasattr(entity, '_struct'):
+            return '<!ENTITY %s "%s">' % (entity.name, entity.value)
         return '<!ENTITY%s%s%s%s%s%s%s>' % (entity._struct[0],
                                         entity.name,
                                        entity._struct[1],

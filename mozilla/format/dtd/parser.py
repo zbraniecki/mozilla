@@ -14,35 +14,32 @@ name = '[' + name_start_char + '][' + name_char + ']*'
 class Parser():
     patterns = {
         'entity': re.compile('<!ENTITY(\s+)(' + name + ')(\s+)(?P<op>["\'])(.*?)(?<!\\\)(?P=op)(\s*)>', re.S|re.U),
+        'id': re.compile('<!ENTITY\s+(' + name + ')', re.S|re.U),
         'comment': re.compile('\<!\s*--(.*?)(?:--\s*\>)', re.M|re.S),
     }
 
     @classmethod
-    def parse(cls, text, struct=True):
+    def parse(cls, text):
         dtd = ast.DTD()
-        if struct:
-            dtd._struct = []
-            cls.split_comments(text, dtd, struct=struct)
-        else:
-            text = cls.remove_comments(text)
-            for match in cls.patterns['entity'].findall(text):
-                dtd.body.append(ast.Entity(match[2], match[5]))
+        dtd._struct = []
+        cls.split_comments(text, dtd, struct=True)
         return dtd
-    """
+
     @classmethod
     def parse_to_idlist(cls, text):
         text = cls.patterns['comment'].sub('', text)
-        ids = [m[0] for m in cls.patterns['id'].findall(text)]
+        ids = [m for m in cls.patterns['id'].findall(text)]
         return ids
 
     @classmethod
     def parse_to_entitylist(cls, text):
-        elist = EntityList(id=None)
+        dtd = ast.DTD()
         text = cls.patterns['comment'].sub('', text)
         for match in cls.patterns['entity'].findall(text):
-            elist.add(Entity(match[0], match[1][1:-1]))
-        return elist
+            dtd.body.append(ast.Entity(match[1], match[4]))
+        return dtd
 
+    """
     @classmethod
     def parse_entity(cls, text):
         match = self.patterns['entity'].match(text)
@@ -52,10 +49,6 @@ class Parser():
         entity.set_value(match.group(1)[1:-1])
         return entity
     """
-
-    @classmethod
-    def remove_comments(cls, text):
-        return cls.patterns['comment'].sub('', text)
 
     @classmethod
     def split_comments (cls, text, dtd, pointer=0, struct=True):
