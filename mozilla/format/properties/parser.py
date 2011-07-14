@@ -1,57 +1,74 @@
 from . import ast
 import re
 import string
+import sys
 
 class ParserError(Exception):
     pass
 
 class Parser():
     patterns = {
-        'id': re.compile('^[\'"]?(\w+)[\'"]?'),
-        'value': re.compile('^(?P<op>[\'"])(.*?)(?<!\\\)(?P=op)'),
+        'entity': re.compile('^[ \t]*([^#!\s\n][^=:\n]*?)[ \t]*[:=][ \t]*(.*?)(?<!\\\)(?=\n|\Z|\r)',re.S|re.M),
+        'comment': re.compile('^(#[^\n]*\n?)+',re.M|re.S),
     }
 
-    def parse(self, text):
-        self.content = text
+
+    @classmethod
+    def parse(cls, text):
         bundle = ast.Bundle()
-        while len(self.content):
-            bundle.body.append(self.get_entry())
-            self.get_ws()
+        bundle._struct = []
+        cls.split_comments(text, bundle, struct=True)
         return bundle
 
-    def get_ws(self):
-        content = self.content.lstrip()
-        ws = self.content[:len(content)*-1]
-        self.content = content
-        return ws
-
-    def get_entry(self):
-        if self.content[:8] == '<!ENTITY':
-            return self.get_entity()
-        elif self.content[:4] == '<!--':
-            return self.get_comment()
-        else:
-            print(self.content[:10])
-            raise ParserError()
-        return ast.Entity('id', 'name')
-
-    def get_entity(self):
-        self.content = self.content[8:]
-        self.get_ws()
-        ptr = 0
-        while self.content[ptr] not in string.whitespace:
-            ptr += 1
-        name = self.content[:ptr]
-        self.content = self.content[ptr:]
-        self.get_ws()
-        value = self.get_value()
-        self.get_ws()
-        self.content = self.content[1:]
-        return ast.Entity(name, value)
-
-    def get_value(self):
-        match = self.patterns['value'].match(self.content)
+    # problem with commented out entities
+    @classmethod
+    def parse_to_entitylist(cls, text):
+        entitylist = EntityList(None)
+        text = cls.patterns['comment'].sub('', text)
+        matchlist = cls.patterns['entity'].findall(text)
+        for match in matchlist:
+            entitylist.add(Entity(match[0], match[1]))
+        return entitylist
+    
+    @classmethod
+    def parse_entity(cls, text, code='default'):
+        match = self.patterns['entity'].match(text)
         if not match:
-            raise ParserError()
-        self.content = self.content[match.end(0):]
-        return match.group(1)
+            raise Exception()
+        entity = Entity(match.group(1))
+        entity.set_value(match.group(2), code=code)
+        return entity
+
+    @classmethod
+    def split_comments(cls, text, bundle, pointer=0, struct=True):
+        pattern = cls.patterns['comment']
+        match = pattern.search(text, pointer)
+        while match:
+            st0 = match.start(0)
+            cls.split_entities(text, bundle, pointer=pointer, struct=struct)
+            groups = match.groups()
+            comment = ast.Comment(match.group(0)[1:].replace('\n#','\n'))
+            bundle.body.append(comment)
+            pointer = match.end(0)
+            match = pattern.search(text, pointer)
+        if len(text) > pointer:
+            cls.split_entities(text, bundle, pointer=pointer, struct=struct)
+
+    @classmethod
+    def split_entities(cls, text, bundle, pointer=0, end=sys.maxsize, struct=True):
+        pattern = cls.patterns['entity']
+        match = pattern.search(text, pointer, end)
+        while match:
+            st0 = match.start(0)
+            if struct:
+                bundle._struct.append(text[pointer:st0])
+            groups = match.groups()
+            param = ast.Parameter(groups[0], groups[1])
+            if struct:
+                param._struct = (match.group(0))
+                param._value_p = match.start(2)-st0
+            bundle.body.append(param)
+            pointer = match.end(0)
+            match = pattern.search(text, pointer, end)
+        if struct and len(text) > pointer:
+            bundle._struct.append(text[pointer:end])
