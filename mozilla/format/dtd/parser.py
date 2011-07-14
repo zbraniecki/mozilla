@@ -51,7 +51,7 @@ class Parser():
     """
 
     @classmethod
-    def split_comments (cls, text, dtd, pointer=0, struct=True):
+    def split_comments(cls, text, dtd, pointer=0, struct=True):
         pattern = cls.patterns['comment']
         match = pattern.search(text)
         while match:
@@ -65,7 +65,7 @@ class Parser():
             cls.split_entities(text, dtd, pointer=pointer, struct=struct)
 
     @classmethod
-    def split_entities (cls, text, dtd, pointer=0, end=sys.maxsize, struct=True):
+    def split_entities(cls, text, dtd, pointer=0, end=sys.maxsize, struct=True):
         pattern = cls.patterns['entity']
         match = pattern.search(text, pointer, end)
         while match:
