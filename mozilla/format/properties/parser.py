@@ -8,7 +8,7 @@ class ParserError(Exception):
 
 class Parser():
     patterns = {
-        'entity': re.compile('^[ \t]*([^#!\s\n][^=:\n]*?)[ \t]*[:=][ \t]*(.*?)(?<!\\\)(?=\n|\Z|\r)',re.S|re.M),
+        'entity': re.compile('^([ \t]*)([^#!\s\n][^=:\n]*?)([ \t]*)[:=]([ \t]*)(.*?)(?<!\\\)(?=\n|\Z|\r)',re.S|re.M),
         'comment': re.compile('^(#[^\n]*\n?)+',re.M|re.S),
     }
 
@@ -45,17 +45,16 @@ class Parser():
         match = pattern.search(text, pointer)
         while match:
             st0 = match.start(0)
-            cls.split_entities(text, bundle, pointer=pointer, struct=struct)
-            groups = match.groups()
+            cls.split_parameters(text, bundle, pointer=pointer, end=st0, struct=struct)
             comment = ast.Comment(match.group(0)[1:].replace('\n#','\n'))
             bundle.body.append(comment)
             pointer = match.end(0)
             match = pattern.search(text, pointer)
         if len(text) > pointer:
-            cls.split_entities(text, bundle, pointer=pointer, struct=struct)
+            cls.split_parameters(text, bundle, pointer=pointer, struct=struct)
 
     @classmethod
-    def split_entities(cls, text, bundle, pointer=0, end=sys.maxsize, struct=True):
+    def split_parameters(cls, text, bundle, pointer=0, end=sys.maxsize, struct=True):
         pattern = cls.patterns['entity']
         match = pattern.search(text, pointer, end)
         while match:
@@ -63,9 +62,9 @@ class Parser():
             if struct:
                 bundle._struct.append(text[pointer:st0])
             groups = match.groups()
-            param = ast.Parameter(groups[0], groups[1])
+            param = ast.Parameter(groups[1], groups[4])
             if struct:
-                param._struct = (match.group(0))
+                param._struct = (groups[0], groups[2], groups[3])
                 param._value_p = match.start(2)-st0
             bundle.body.append(param)
             pointer = match.end(0)

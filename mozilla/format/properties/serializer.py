@@ -26,13 +26,12 @@ class Serializer():
 
     @classmethod
     def dump_parameter(cls, param):
-        if False and hasattr(param, '_struct'):
-            match = Parser.patterns['param'].match(param.params['source']['string'])
-            string = param.params['source']['string'][0:match.start(1)]
-            string += param.id
-            string += param.params['source']['string'][match.end(1):match.start(2)]
-            string += param.value
-            string += param.params['source']['string'][match.end(2):]
+        if hasattr(param, '_struct'):
+            string = '%s%s%s=%s%s' % (param._struct[0],
+                                      param.key,
+                                      param._struct[1],
+                                      param._struct[2],
+                                      param.value)
         else:
             string = '%s = %s' % (param.key, param.value)
         return string
