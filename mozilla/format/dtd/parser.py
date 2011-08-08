@@ -1,4 +1,4 @@
-from . import ast
+from mozilla.format.dtd import ast
 import re
 import sys
 
@@ -10,6 +10,10 @@ name_start_char = ':A-Z_a-z\xC0-\xD6\xD8-\xF6\xF8-\u02FF' + \
         '\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD'
 name_char = name_start_char + '\-\.0-9' + '\xB7\u0300-\u036F\u203F-\u2040'
 name = '[' + name_start_char + '][' + name_char + ']*'
+
+if sys.version < '3':
+    import codecs
+    name = codecs.unicode_escape_decode(name)[0]
 
 class Parser():
     patterns = {

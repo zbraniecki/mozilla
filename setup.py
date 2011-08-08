@@ -8,6 +8,6 @@ setup(name='mozilla',
       author='Zbigniew Braniecki',
       author_email='zbigniew@braniecki.net',
       url='https://github.com/zbraniecki/mozilla',
-      packages=['mozilla.format.dtd', 'mozilla.format.properties'],
+      packages=['mozilla', 'mozilla.format', 'mozilla.format.dtd', 'mozilla.format.properties', 'mozilla.l10n'],
      )
 

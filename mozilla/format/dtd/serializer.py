@@ -1,5 +1,14 @@
 from . import ast
-from itertools import chain, zip_longest
+
+
+from itertools import chain
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    # for Python 2.6+
+    from itertools import izip_longest as zip_longest
+
 
 class SerializerError(Exception):
     pass
